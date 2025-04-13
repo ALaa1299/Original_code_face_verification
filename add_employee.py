@@ -1,6 +1,7 @@
 from employee_db import EmployeeDatabase
 import streamlit as st
 import os
+from io import BytesIO
 
 def show():
     st.header("Add New Employee")
@@ -18,11 +19,12 @@ def show():
         with col2:
             uploaded_file = st.file_uploader("Employee Photo*", type=['jpg', 'jpeg', 'png'])
             if uploaded_file is not None:
-                os.makedirs("images/employees", exist_ok=True)
-                image_path = f"images/employees/{militaryID}_{uploaded_file.name}"
-                with open(image_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                st.image(image_path, width=150)  # Display the saved image
+                # Read image data into memory
+                image_data = BytesIO(uploaded_file.read())
+                # Display the uploaded image
+                st.image(image_data, width=150)
+                # Reset pointer for database storage
+                image_data.seek(0)
         
         submitted = st.form_submit_button("Add Employee")
         if submitted:
@@ -31,8 +33,14 @@ def show():
             else:
                 try:
                     militaryID = int(militaryID)
-                    image_path = f"images/employees/{militaryID}_{uploaded_file.name}"
-                    result = db.add_employee(rank, fullname, militaryID, department, image_path)
+                    # Store image binary data directly in MongoDB
+                    result = db.add_employee(
+                        rank, 
+                        fullname, 
+                        militaryID, 
+                        department, 
+                        image_data.getvalue()  # Store binary data
+                    )
                     if "Successfully" in result:
                         st.success(result)
                     elif "already exists" in result:
@@ -41,3 +49,5 @@ def show():
                         st.error(result)
                 except ValueError:
                     st.error("Military ID must be a number")
+                except Exception as e:
+                    st.error(f"Error saving employee: {str(e)}")

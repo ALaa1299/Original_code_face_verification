@@ -1,8 +1,16 @@
 import streamlit as st
 from login_view import check_auth
 
+# Page configuration must be the first Streamlit command
+st.set_page_config(
+    page_title="Employee Management System",
+    page_icon="👨‍💼",
+    layout="wide"
+)
+
 # Check authentication before showing any content
 check_auth()
+
 from add_employee import show as show_add_employee
 from view_employees import show as show_view_employees
 from record_attendance import show as show_record_attendance
@@ -51,13 +59,6 @@ def show_delete_attendance_records():
             count = db.delete_daily_attendance(selected_date)
             st.success(f"Deleted {count} attendance records for {selected_date.strftime('%Y-%m-%d')}")
 
-# Page configuration
-st.set_page_config(
-    page_title="Employee Management System",
-    page_icon="👨‍💼",
-    layout="wide"
-)
-
 # Sidebar navigation
 st.sidebar.title("Navigation")
 
@@ -65,6 +66,7 @@ st.sidebar.title("Navigation")
 if st.sidebar.button("Sign Out"):
     st.session_state.authenticated = False
     st.rerun()
+
 # Navigation options
 nav_options = [
     "Add Employee",

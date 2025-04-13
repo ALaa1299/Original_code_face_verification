@@ -69,7 +69,10 @@ def show_face_verification():
         with st.container():
             st.write(f"**Verified Employee:** {emp['fullname']} (ID: {emp['militaryID']})")
             st.write(f"Rank: {emp['rank']}, Department: {emp['department']}")
-            st.image(emp['image_path'], width=100)
+            if emp.get('image_data'):
+                st.image(emp['image_data'], width=100)
+            else:
+                st.warning("No image available")
 
             if st.button("OK"):
                 del st.session_state.last_verified

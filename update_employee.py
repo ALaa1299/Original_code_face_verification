@@ -19,29 +19,16 @@ def show():
             if fullname: update_data['fullname'] = fullname
             if department: update_data['department'] = department
             if uploaded_file is not None:
-                import os
                 try:
                     # Convert militaryID to int for database query
                     militaryID_int = int(militaryID)
                     
-                    # Get current image path if exists
+                    # Get current employee data
                     current_employee = db.collection.find_one({"militaryID": militaryID_int})
-                    current_image = current_employee.get('image_path', '') if current_employee else ''
                     
-                    # Delete old image if exists
-                    if current_image and os.path.exists(current_image):
-                        try:
-                            os.remove(current_image)
-                            st.info(f"Deleted old image: {current_image}")
-                        except Exception as e:
-                            st.error(f"Failed to delete old image: {str(e)}")
-                    
-                    # Save new image
-                    os.makedirs("images/employees", exist_ok=True)
-                    image_path = f"images/employees/{militaryID}_{uploaded_file.name}"
-                    with open(image_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    update_data['image_path'] = image_path
+                    # Read new image as binary data
+                    image_data = uploaded_file.read()
+                    update_data['image_data'] = image_data
                 except Exception as e:
                     st.error(f"Error handling image update: {str(e)}")
             

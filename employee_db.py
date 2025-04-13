@@ -68,7 +68,7 @@ class EmployeeDatabase:
             emp.setdefault('fullname', 'Unknown')
             emp.setdefault('militaryID', 0)
             emp.setdefault('department', 'N/A')
-            emp.setdefault('image_path', '')
+            emp.setdefault('image_data', None)
         return employees
 
     def get_attendance_by_date(self, date):
@@ -89,25 +89,12 @@ class EmployeeDatabase:
         ).sort("timestamp", pymongo.DESCENDING))
 
     def delete_employee(self, militaryID):
-        """Delete an employee record, their attendance data, and associated image"""
-        # First get the employee record to find image path
+        """Delete an employee record and their attendance data"""
+        # First get the employee record
         employee = self.collection.find_one({"militaryID": militaryID})
         
         if not employee:
             return f"No employee found with ID {militaryID}"
-            
-        image_path = employee.get('image_path', '')
-        deleted_image = False
-        
-        # Delete the image file if it exists
-        if image_path:
-            try:
-                import os
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-                    deleted_image = True
-            except Exception as e:
-                print(f"Error deleting image: {e}")
         
         # Delete employee record
         employee_result = self.collection.delete_one({"militaryID": militaryID})
@@ -115,22 +102,16 @@ class EmployeeDatabase:
         # Delete attendance records
         attendance_result = self.attendance_collection.delete_many({"militaryID": militaryID})
         
-        message = f"Successfully deleted employee {militaryID} and {attendance_result.deleted_count} attendance records"
-        if deleted_image:
-            message += " (image deleted)"
-        elif image_path:
-            message += " (image not found)"
-            
-        return message
+        return f"Successfully deleted employee {militaryID} and {attendance_result.deleted_count} attendance records"
 
-    def add_employee(self, rank, fullname, militaryID, department, image_path):
-        """Add a new employee record to the database"""
+    def add_employee(self, rank, fullname, militaryID, department, image_data):
+        """Add a new employee record to the database with binary image data"""
         employee_data = {
             'rank': rank,
             'fullname': fullname,
             'militaryID': militaryID,
             'department': department,
-            'image_path': image_path
+            'image_data': image_data  # Store binary data directly
         }
         
         try:

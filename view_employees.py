@@ -34,12 +34,9 @@ def show():
             cols = st.columns([1, 3, 1])  # Image, Info, Delete button
             
             with cols[0]:  # Image column
-                if emp.get('image_path'):
+                if emp.get('image_data'):
                     try:
-                        if os.path.exists(emp['image_path']):
-                            st.image(emp['image_path'], width=100)
-                        else:
-                            st.warning(f"Image not found at: {emp['image_path']}")
+                        st.image(emp['image_data'], width=100)
                     except Exception as e:
                         st.error(f"Error loading image: {str(e)}")
                 else:
