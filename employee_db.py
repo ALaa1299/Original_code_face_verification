@@ -154,6 +154,20 @@ class EmployeeDatabase:
         except Exception as e:
             logger.error(f"Error recording attendance: {str(e)}")
 
+    def update_employee(self, militaryID, update_data):
+        try:
+            result = self.collection.update_one(
+                {"militaryID": militaryID},
+                {"$set": update_data}
+            )
+            if result.modified_count > 0:
+                return f"Successfully updated employee with ID: {militaryID}"
+            else:
+                return "No employee found with the given ID or no changes made."
+        except Exception as e:
+            logger.error(f"Error updating employee: {str(e)}")
+            return f"Error updating employee: {str(e)}"
+
     def get_all_employees(self):
         try:
             return list(self.collection.find({}))
