@@ -224,19 +224,21 @@ class EmployeeDatabase:
     def delete_daily_attendance(self, selected_date):
         """Delete all attendance records for a specific date"""
         try:
-            # Convert selected_date to datetime object if necessary
+            # Handle both date strings and date objects
             if isinstance(selected_date, str):
-                selected_date = datetime.strptime(selected_date, '%Y-%m-%d')
+                date_obj = datetime.strptime(selected_date, '%Y-%m-%d')
+            else:
+                date_obj = datetime.combine(selected_date, datetime.min.time())
             
             # Define the start and end of the day
-            start_date = selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = selected_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
             
             # Delete records within the date range
             result = self.attendance_collection.delete_many({
                 "timestamp": {
                     "$gte": start_date,
-                    "$lt": end_date
+                    "$lte": end_date
                 }
             })
             return result.deleted_count
