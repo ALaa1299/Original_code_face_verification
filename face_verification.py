@@ -30,7 +30,7 @@ class FaceVerificationProcessor:
 
 def show_face_verification():
     st.header("Face Verification")
-    db = EmployeeDatabase()
+    db = EmployeeDatabase.get_instance()
     camera_handler = CameraHandler()
     processor = FaceVerificationProcessor(db, camera_handler)
     st.info("Initializing camera...")
@@ -50,10 +50,6 @@ def show_face_verification():
         emp = st.session_state.last_verified
         st.write(f"**Verified Employee:** {emp['fullname']} (ID: {emp['militaryID']})")
         # Updated to use image_binary
-        # Convert binary image data to displayable format
-        from PIL import Image
-        from io import BytesIO
-        img = Image.open(BytesIO(emp['image_binary']))
-        st.image(img, width=100, caption="Employee Photo")
+        st.image(emp['image_binary'], width=100, caption="Employee Photo")
 
 show_face_verification()

@@ -4,6 +4,7 @@ import logging
 import queue
 import av
 from typing import Union
+from threading import Lock
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,13 +33,14 @@ class VideoProcessor:
         try:
             self.frame_queue.put(frame.to_ndarray(format="bgr24"))
         except queue.Full:
-            pass
+            logger.warning("Frame queue is full, dropping frame.")
         return frame
 
 class CameraHandler:
     def __init__(self):
         self.webrtc_ctx = None
         self.video_processor = VideoProcessor()
+        self.lock = Lock()
 
     def initialize_camera(self, key="camera-feed"):
         st.info("Please grant permission for camera access in your browser.")
@@ -78,9 +80,22 @@ class CameraHandler:
             return None
             
         try:
-            if not self.video_processor.frame_queue.empty():
-                return self.video_processor.frame_queue.get()
+            with self.lock:
+                if not self.video_processor.frame_queue.empty():
+                    return self.video_processor.frame_queue.get()
             return None
         except Exception as e:
             logger.error(f"Error getting frame: {str(e)}")
             return None
+
+    def release(self):
+        """Clean up camera resources"""
+        with self.lock:
+            if self.webrtc_ctx:
+                try:
+                    self.webrtc_ctx.video_receiver.stop()
+                    logger.info("Camera resources released")
+                except Exception as e:
+                    logger.error(f"Error releasing camera: {str(e)}")
+                finally:
+                    self.webrtc_ctx = None

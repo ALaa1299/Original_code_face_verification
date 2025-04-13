@@ -7,7 +7,7 @@ from deepface import DeepFace
 
 def add_employee_view():
     st.header("Add New Employee")
-    db = EmployeeDatabase()
+    db = EmployeeDatabase.get_instance()
 
     with st.form("add_employee_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
@@ -47,7 +47,6 @@ def add_employee_view():
                     
                     if "Successfully" in result:
                         st.success(result)
-                        st.balloons()
                     else:
                         st.warning(result)
                 except ValueError:
@@ -55,8 +54,4 @@ def add_employee_view():
                 except Exception as e:
                     st.error(f"Error adding employee: {str(e)}")
 
-def show():
-    add_employee_view()
-
-if __name__ == "__main__":
-    show()
+add_employee_view()

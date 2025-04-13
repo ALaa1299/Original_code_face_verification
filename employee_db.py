@@ -13,6 +13,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class EmployeeDatabase:
+    _instance = None
+
+    @classmethod
+    def get_instance(cls, db_name='employee_management', collection_name='employees'):
+        if cls._instance is None:
+            cls._instance = cls(db_name, collection_name)
+        return cls._instance
+
     def __init__(self, db_name='employee_management', collection_name='employees'):
         self.client = None
         self.db = None
@@ -27,10 +35,19 @@ class EmployeeDatabase:
                 serverSelectionTimeoutMS=5000
             )
             self.client.server_info()  # Test connection
-            self.db = self.client[db_name]
-            self.collection = self.db[collection_name]
-            self.attendance_collection = self.db['attendance']
-            self._setup_database()
+            
+            if db_name in self.client.list_database_names():
+                self.db = self.client[db_name]
+                self.collection = self.db[collection_name]
+                self.attendance_collection = self.db['attendance']
+                logger.info("Connected to existing database")
+            else:
+                self.db = self.client[db_name]
+                self.collection = self.db[collection_name]
+                self.attendance_collection = self.db['attendance']
+                self._setup_database()
+                logger.info("Successfully created new database and collection")
+            
             logger.info("Successfully connected to MongoDB")
         except ConnectionFailure as e:
             logger.error(f"Failed to connect to MongoDB: {str(e)}")
