@@ -2,7 +2,6 @@ import cv2
 from deepface import DeepFace
 import numpy as np
 import logging
-from deepface.commons import distance as dst
 
 class FaceRecognitionHandler:
     def __init__(self, db):
@@ -25,7 +24,7 @@ class FaceRecognitionHandler:
             self.logger.error(f"Error loading employee faces: {str(e)}")
 
     def verify_face(self, frame):
-        """Verify a face against known embeddings"""
+        """Verify a face against known embeddings using DeepFace's built-in verification"""
         results = {}
         try:
             # Get embedding from current frame
@@ -37,11 +36,17 @@ class FaceRecognitionHandler:
             )[0]['embedding']
             frame_embedding = np.array(frame_embedding)
 
-            # Compare against all known embeddings
+            # Compare against all known embeddings using DeepFace.verify
             for emp_id, known_embedding in zip(self.known_ids, self.known_embeddings):
                 try:
-                    distance = dst.findCosineDistance(frame_embedding, known_embedding)
-                    results[emp_id] = distance < self.threshold
+                    verification = DeepFace.verify(
+                        img1_path=frame_embedding.reshape(1, -1),
+                        img2_path=known_embedding.reshape(1, -1),
+                        model_name='Facenet',
+                        distance_metric='cosine',
+                        enforce_detection=False
+                    )
+                    results[emp_id] = verification['verified']
                 except Exception as e:
                     self.logger.warning(f"Error comparing with ID {emp_id}: {str(e)}")
                     results[emp_id] = False
