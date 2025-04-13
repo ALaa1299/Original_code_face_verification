@@ -1,3 +1,4 @@
+import streamlit as st
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 
 class CameraHandler:
@@ -9,14 +10,23 @@ class CameraHandler:
 
     def initialize_camera(self, key="camera-feed"):
         """
-        Initialize the WebRTC streamer for camera feed.
+        Prompt the user for permission and initialize the WebRTC streamer for camera feed.
         """
+        st.info("Please grant permission for camera access in your browser.")
+
+        # Initialize the WebRTC streamer
         self.webrtc_ctx = webrtc_streamer(
             key=key,
             mode=WebRtcMode.SENDRECV,  # Send and receive video
             media_stream_constraints={"video": True, "audio": False},  # Video-only
             async_processing=True,  # Enable async processing for smooth performance
         )
+
+        if self.webrtc_ctx.video_receiver:
+            st.success("Camera initialized successfully! Start using the app.")
+        else:
+            st.warning("Waiting for camera access permission...")
+
         return self.webrtc_ctx
 
     def get_frame(self):
