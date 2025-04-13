@@ -2,13 +2,14 @@ import streamlit as st
 from io import BytesIO
 from PIL import Image
 from employee_db import EmployeeDatabase
+import numpy as np
+from deepface import DeepFace
 
 def add_employee_view():
     st.header("Add New Employee")
-    db = EmployeeDatabase()  # Initialize the database
+    db = EmployeeDatabase()
 
-    # Create a form for user input
-    with st.form("add_employee_form"):
+    with st.form("add_employee_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -20,40 +21,38 @@ def add_employee_view():
         with col2:
             uploaded_file = st.file_uploader("Employee Photo*", type=['jpg', 'jpeg', 'png'])
             if uploaded_file is not None:
-                # Read image data and display preview
-                image_data = BytesIO(uploaded_file.read())
-                st.image(image_data, width=150, caption="Uploaded Photo")
-                image_data.seek(0)  # Reset pointer for processing
+                try:
+                    image_data = BytesIO(uploaded_file.read())
+                    img = Image.open(image_data)
+                    st.image(img, width=150, caption="Uploaded Photo")
+                    image_data.seek(0)
+                except Exception as e:
+                    st.error(f"Error processing image: {str(e)}")
 
         submitted = st.form_submit_button("Add Employee")
 
         if submitted:
-            # Validate inputs
             if not all([rank, fullname, militaryID, department]) or uploaded_file is None:
                 st.error("All fields are required!")
             else:
                 try:
-                    # Ensure military ID is numeric
                     militaryID = int(militaryID)
-
-                    # Prepare binary image data
-                    img = Image.open(image_data)
-                    img_byte_arr = BytesIO()
-                    img.save(img_byte_arr, format='JPEG')
-                    img_binary = img_byte_arr.getvalue()
-
-                    # Add employee to the database
-                    result = db.add_employee(rank, fullname, militaryID, department, img_binary)
+                    result = db.add_employee(
+                        rank=rank,
+                        fullname=fullname,
+                        militaryID=militaryID,
+                        department=department,
+                        image_data=image_data.getvalue()
+                    )
                     
-                    # Handle database response
                     if "Successfully" in result:
                         st.success(result)
-                        st.experimental_rerun()  # Refresh view
-                    elif "already exists" in result:
-                        st.warning(result)
+                        st.balloons()
                     else:
-                        st.error(result)
+                        st.warning(result)
                 except ValueError:
-                    st.error("Military ID must be a numeric value.")
+                    st.error("Military ID must be a numeric value")
                 except Exception as e:
-                    st.error(f"An error occurred: {str(e)}")
+                    st.error(f"Error adding employee: {str(e)}")
+
+add_employee_view()
