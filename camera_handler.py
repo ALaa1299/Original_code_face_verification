@@ -51,17 +51,9 @@ class CameraHandler:
             return frame
             
         if self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret: return frame
-            self.logger.warning("Failed to read frame from camera")
-        return None
-
-    def get_frame(self):
-        """Capture a frame from the camera with error handling."""
-        if self.cap is not None and self.cap.isOpened():
             try:
                 ret, frame = self.cap.read()
-                if ret:
+                if ret: 
                     return frame
                 self.logger.warning("Failed to read frame from camera")
             except Exception as e:
