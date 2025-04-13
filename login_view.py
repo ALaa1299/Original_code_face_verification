@@ -13,9 +13,10 @@ def authenticate(username, password):
     admin_user = os.getenv('ADMIN_USERNAME')
     admin_pass = os.getenv('ADMIN_PASSWORD')
     
-    if username == admin_user and password == admin_pass:
-        st.session_state.role = 'admin'
-        return True
+    if admin_user and admin_pass:  # Only check if env vars are set
+        if username == admin_user and password == admin_pass:
+            st.session_state.role = 'admin'
+            return True
         
     db = UsersDatabase()
     if db.authenticate_user(username, password):
