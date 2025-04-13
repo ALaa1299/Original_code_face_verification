@@ -7,3 +7,4 @@ pillow>=9.0.1
 python-dotenv>=1.0.0
 gunicorn>=21.2.0
 tf-keras>=2.15.0
+streamlit-webrtc>=0.34.0
