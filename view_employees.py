@@ -1,5 +1,6 @@
 import streamlit as st
 import cv2
+import os
 from employee_db import EmployeeDatabase
 
 def show():
@@ -35,11 +36,10 @@ def show():
             with cols[0]:  # Image column
                 if emp.get('image_path'):
                     try:
-                        image = cv2.imread(emp['image_path'])
-                        if image is not None:
-                            st.image(image, channels="BGR", width=100)
+                        if os.path.exists(emp['image_path']):
+                            st.image(emp['image_path'], width=100)
                         else:
-                            st.warning("No image found")
+                            st.warning(f"Image not found at: {emp['image_path']}")
                     except Exception as e:
                         st.error(f"Error loading image: {str(e)}")
                 else:

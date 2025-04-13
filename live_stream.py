@@ -67,7 +67,7 @@ def main():
             },
             media_stream_constraints={
                 "video": True,
-                "audio": False
+                "audio": False  # Ensure audio is disabled
             }
         )
         

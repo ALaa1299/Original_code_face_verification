@@ -17,12 +17,11 @@ def show():
         with col2:
             uploaded_file = st.file_uploader("Employee Photo*", type=['jpg', 'jpeg', 'png'])
             if uploaded_file is not None:
-                import os
                 os.makedirs("images/employees", exist_ok=True)
                 image_path = f"images/employees/{militaryID}_{uploaded_file.name}"
                 with open(image_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
-                st.image(uploaded_file, width=150)
+                st.image(image_path, width=150)  # Display the saved image
         
         submitted = st.form_submit_button("Add Employee")
         if submitted:
