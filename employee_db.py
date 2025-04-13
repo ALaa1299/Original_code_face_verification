@@ -1,7 +1,7 @@
 import pymongo
 from datetime import datetime
 from pymongo import MongoClient, IndexModel
-from pymongo.errors import DuplicateKeyError, OperationFailure
+from pymongo.errors import DuplicateKeyError
 from deepface import DeepFace
 import numpy as np
 from io import BytesIO
@@ -9,26 +9,18 @@ from PIL import Image
 
 class EmployeeDatabase:
     def __init__(self, db_name='employee_management', collection_name='employees'):
-        """Initialize MongoDB connection and setup database"""
         try:
             self.client = MongoClient("mongodb+srv://root:example@faceverification.qp2ckht.mongodb.net/?appName=faceverification")
-            # Test connection
-            self.client.server_info()
-            print("✅ Successfully connected to MongoDB")
+            self.client.server_info()  # Test connection
         except Exception as e:
-            print(f"❌ Failed to connect to MongoDB: {str(e)}")
-            raise
+            raise ConnectionError(f"Failed to connect to MongoDB: {str(e)}")
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.attendance_collection = self.db['attendance']
-        
-        # Create schema validation and indexes
         self._setup_database()
 
     def _setup_database(self):
-        """Setup database indexes"""
         try:
-            # Only create collection if it doesn't exist
             if self.collection.name not in self.db.list_collection_names():
                 self.db.create_collection(
                     self.collection.name,
@@ -47,48 +39,28 @@ class EmployeeDatabase:
                         }
                     }
                 )
-            
-            # Create unique index on militaryID if it doesn't exist
-            existing_indexes = [idx['name'] for idx in self.collection.list_indexes()]
-            if 'militaryID_1' not in existing_indexes:
-                index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
-                self.collection.create_indexes([index1])
-        except OperationFailure as e:
-            print(f"Warning: Database setup limited due to permissions - {str(e)}")
-            # Try to create just the index which may work with fewer permissions
-            try:
-                index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
-                self.collection.create_indexes([index1])
-            except Exception as e:
-                print(f"Failed to create indexes: {str(e)}")
+            index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
+            self.collection.create_indexes([index1])
+        except Exception as e:
+            print(f"Warning: {str(e)}")
 
     def add_employee(self, rank, fullname, militaryID, department, image_data):
-        """Add a new employee record with face embedding"""
-        # Convert binary image data to numpy array
-        img = Image.open(BytesIO(image_data))
-        img_array = np.array(img)
-        
-        # Generate face embedding
         try:
+            img = Image.open(BytesIO(image_data))
             embedding = DeepFace.represent(
-                img_path=img_array,
+                img_path=np.array(img),
                 model_name='Facenet',
                 detector_backend="mtcnn",
                 enforce_detection=False
             )[0]['embedding']
-        except Exception as e:
-            return f"Error generating face embedding: {str(e)}"
-
-        employee_data = {
-            'rank': rank,
-            'fullname': fullname,
-            'militaryID': militaryID,
-            'department': department,
-            'image_data': image_data,
-            'face_embedding': embedding
-        }
-        
-        try:
+            employee_data = {
+                'rank': rank,
+                'fullname': fullname,
+                'militaryID': militaryID,
+                'department': department,
+                'image_data': image_data,
+                'face_embedding': embedding
+            }
             self.collection.insert_one(employee_data)
             return f"Successfully added employee {fullname} (ID: {militaryID})"
         except DuplicateKeyError:
@@ -96,73 +68,15 @@ class EmployeeDatabase:
         except Exception as e:
             return f"Error adding employee: {str(e)}"
 
+    def get_employee_by_id(self, militaryID):
+        return self.collection.find_one({"militaryID": militaryID})
+
     def record_attendance(self, militaryID, status):
-        """Record employee attendance with timestamp"""
-        attendance_record = {
+        self.attendance_collection.insert_one({
             "militaryID": militaryID,
             "status": status,
             "timestamp": datetime.now()
-        }
-        self.attendance_collection.insert_one(attendance_record)
-
-    def delete_employee_attendance(self, militaryID):
-        """Delete all attendance records for a specific employee"""
-        result = self.attendance_collection.delete_many({"militaryID": militaryID})
-        return result.deleted_count
-
-    def delete_daily_attendance(self, date):
-        """Delete all attendance records for a specific date"""
-        start_date = datetime(date.year, date.month, date.day)
-        end_date = datetime(date.year, date.month, date.day, 23, 59, 59)
-        result = self.attendance_collection.delete_many({
-            "timestamp": {
-                "$gte": start_date,
-                "$lte": end_date
-            }
         })
-        return result.deleted_count
 
     def get_all_employees(self):
-        """Get all employee records from the database"""
-        employees = list(self.collection.find({}))
-        # Ensure all required fields exist in each record
-        for emp in employees:
-            emp.setdefault('rank', 'N/A')
-            emp.setdefault('fullname', 'Unknown')
-            emp.setdefault('militaryID', 0)
-            emp.setdefault('department', 'N/A')
-            emp.setdefault('image_data', None)
-        return employees
-
-    def get_attendance_by_date(self, date):
-        """Get all attendance records for a specific date"""
-        start_date = datetime(date.year, date.month, date.day)
-        end_date = datetime(date.year, date.month, date.day, 23, 59, 59)
-        return list(self.attendance_collection.find({
-            "timestamp": {
-                "$gte": start_date,
-                "$lte": end_date
-            }
-        }))
-
-    def get_attendance_by_employee(self, militaryID):
-        """Get all attendance records for a specific employee"""
-        return list(self.attendance_collection.find(
-            {"militaryID": militaryID}
-        ).sort("timestamp", pymongo.DESCENDING))
-
-    def delete_employee(self, militaryID):
-        """Delete an employee record and their attendance data"""
-        # First get the employee record
-        employee = self.collection.find_one({"militaryID": militaryID})
-        
-        if not employee:
-            return f"No employee found with ID {militaryID}"
-        
-        # Delete employee record
-        employee_result = self.collection.delete_one({"militaryID": militaryID})
-        
-        # Delete attendance records
-        attendance_result = self.attendance_collection.delete_many({"militaryID": militaryID})
-        
-        return f"Successfully deleted employee {militaryID} and {attendance_result.deleted_count} attendance records"
+        return list(self.collection.find({}))
