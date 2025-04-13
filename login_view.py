@@ -36,7 +36,7 @@ def show_login():
         if submitted:
             if authenticate(username, password):
                 st.session_state.authenticated = True
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("Invalid username or password")
 
