@@ -46,7 +46,7 @@ def show():
             })
 
         # Display report
-        st.dataframe(report_data)
+        #st.dataframe(report_data)
         
         # Generate full attendance report including absentees
         all_employees = db.get_all_employees()
