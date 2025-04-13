@@ -1,4 +1,3 @@
-import os
 import pymongo
 from datetime import datetime
 from pymongo import MongoClient, IndexModel
@@ -7,33 +6,7 @@ from pymongo.errors import DuplicateKeyError, OperationFailure
 class EmployeeDatabase:
     def __init__(self, db_name='employee_management', collection_name='employees'):
         """Initialize MongoDB connection and setup database"""
-        # Get credentials from environment variables
-        mongo_user = os.getenv("MONGO_USER", "root")
-        mongo_password = os.getenv("MONGO_PASSWORD", "example")
-        mongo_host = os.getenv("MONGO_HOST", "faceverification.qp2ckht.mongodb.net")
-        
-        print(f"Environment variables:")
-        print(f"MONGO_USER: {'set' if mongo_user else 'not set'}")
-        print(f"MONGO_PASSWORD: {'set' if mongo_password else 'not set'}")
-        print(f"MONGO_HOST: {mongo_host}")
-        print(f"Attempting connection with: mongodb+srv://{mongo_user}:*****@{mongo_host}")
-        
-        self.client = MongoClient(
-            f"mongodb+srv://{mongo_user}:{mongo_password}@{mongo_host}/"
-            f"?retryWrites=true&w=majority&appName=faceverification",
-            connectTimeoutMS=30000,
-            socketTimeoutMS=30000,
-            serverSelectionTimeoutMS=5000
-        )
-        
-        # Test the connection immediately
-        try:
-            self.client.server_info()
-            print("✓ Database connection verified")
-        except Exception as e:
-            print(f"✗ Connection failed: {str(e)}")
-            raise ValueError(f"Failed to connect to MongoDB: {str(e)}")
-
+        self.client = MongoClient('mongodb://localhost:27017/')
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.attendance_collection = self.db['attendance']
@@ -42,12 +15,52 @@ class EmployeeDatabase:
         self._setup_database()
 
     def _setup_database(self):
-        """Setup database indexes (skip schema validation for Atlas)"""
-        # Only create indexes if they don't exist
-        existing_indexes = self.collection.index_information()
-        if 'militaryID_1' not in existing_indexes:
-            index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
-            self.collection.create_indexes([index1])
+        """Create schema validation and indexes"""
+        validator = {
+            '$jsonSchema': {
+                'bsonType': 'object',
+                'required': ['rank', 'fullname', 'militaryID', 'department', 'image_path'],
+                'properties': {
+                    'rank': {
+                        'bsonType': 'string',
+                        'description': 'must be a string and is required'
+                    },
+                    'fullname': {
+                        'bsonType': 'string',
+                        'description': 'must be a string and is required'
+                    },
+                    'militaryID': {
+                        'bsonType': 'int',
+                        'description': 'must be an integer and is required'
+                    },
+                    'department': {
+                        'bsonType': 'string',
+                        'description': 'must be a string and is required'
+                    },
+                    'image_path': {
+                        'bsonType': 'string',
+                        'description': 'must be a string and is required'
+                    }
+                }
+            }
+        }
+
+        # Only create collection if it doesn't exist
+        if self.collection.name not in self.db.list_collection_names():
+            self.db.create_collection(
+                self.collection.name,
+                validator=validator
+            )
+        # Update validation on existing collection
+        else:
+            self.db.command({
+                'collMod': self.collection.name,
+                'validator': validator
+            })
+
+        # Create indexes
+        index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
+        self.collection.create_indexes([index1])
 
     def record_attendance(self, militaryID, status):
         """Record employee attendance with timestamp"""

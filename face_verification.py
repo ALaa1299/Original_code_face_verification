@@ -47,18 +47,10 @@ def show_face_verification():
             st.session_state.verification_in_progress = False
             return
 
-        # Start camera with retries and detailed error handling
+        # Start camera with error handling
         if not camera_handler.start_camera():
-            st.error("""
-            Camera initialization failed. Possible causes:
-            1. No camera connected
-            2. Camera in use by another application
-            3. Permission issues (on Linux/Mac)
-            
-            Please check your camera connection and try again.
-            """)
+            st.error("Failed to initialize camera. Please check camera connection.")
             st.session_state.verification_in_progress = False
-            camera_handler.release_camera()
             return
             
         FRAME_WINDOW = st.empty()
