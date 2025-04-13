@@ -8,26 +8,44 @@ class CameraHandler:
         self.logger = logging.getLogger(__name__)
 
     def start_camera(self, max_attempts=3):
-        """Start the camera feed with multiple fallback attempts."""
-        for i in range(max_attempts):
-            try:
-                self.cap = cv2.VideoCapture(i)
-                if self.cap.isOpened():
-                    self.logger.info(f"Successfully opened camera at index {i}")
-                    return True
-                self.cap.release()
-            except Exception as e:
-                self.logger.warning(f"Camera attempt {i} failed: {str(e)}")
-        
-        # Try environment variable as fallback
-        try:
-            cam_source = int(os.getenv('CAMERA_SOURCE', '0'))
-            self.cap = cv2.VideoCapture(cam_source)
-            if self.cap.isOpened():
-                self.logger.info(f"Using camera from ENV variable: {cam_source}")
-                return True
-        except Exception as e:
-            self.logger.error(f"All camera attempts failed: {str(e)}")
+        """Start the camera feed with multiple fallback strategies."""
+        # Try different backends
+        backends = [
+            cv2.CAP_ANY,        # Auto-detect backend
+            cv2.CAP_V4L2,       # V4L2 backend
+            cv2.CAP_DSHOW,      # DirectShow
+            cv2.CAP_FFMPEG      # FFMPEG
+        ]
+
+        # Try different sources
+        sources = [
+            0,                  # Default camera index
+            '/dev/video0',      # Common Linux device path
+            '/dev/video1',
+            '/dev/video2',
+            '/dev/video*',      # Wildcard pattern
+            os.getenv('CAMERA_SOURCE', '0')  # From environment
+        ]
+
+        for backend in backends:
+            for source in sources:
+                try:
+                    if isinstance(source, int) or source.isdigit():
+                        self.cap = cv2.VideoCapture(int(source), backend)
+                    else:
+                        self.cap = cv2.VideoCapture(source, backend)
+                    
+                    if self.cap.isOpened():
+                        self.logger.info(f"Opened camera: {source} with backend {backend}")
+                        return True
+                    self.cap.release()
+                except Exception as e:
+                    self.logger.warning(f"Failed to open {source} with backend {backend}: {str(e)}")
+
+        self.logger.error("All camera attempts failed. Possible solutions:")
+        self.logger.error("1. Check camera is connected and recognized by OS")
+        self.logger.error("2. Verify container has camera access permissions")
+        self.logger.error("3. Try setting CAMERA_SOURCE environment variable")
         
         return False
 
