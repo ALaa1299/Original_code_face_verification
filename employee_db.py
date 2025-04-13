@@ -220,3 +220,20 @@ class EmployeeDatabase:
         except Exception as e:
             logger.error(f"Error deleting attendance records: {str(e)}")
             return 0
+
+    def delete_employee(self, militaryID):
+        """Delete an employee and all their attendance records"""
+        try:
+            # First delete attendance records
+            attendance_deleted = self.delete_employee_attendance(militaryID)
+            
+            # Then delete the employee
+            result = self.collection.delete_one({"militaryID": militaryID})
+            
+            if result.deleted_count > 0:
+                return f"Successfully deleted employee (ID: {militaryID}) and {attendance_deleted} attendance records"
+            else:
+                return f"No employee found with ID: {militaryID}"
+        except Exception as e:
+            logger.error(f"Error deleting employee: {str(e)}")
+            return f"Error deleting employee: {str(e)}"
