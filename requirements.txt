@@ -6,6 +6,6 @@ python-dateutil>=2.8.2
 pillow>=9.0.1
 python-dotenv>=1.0.0
 gunicorn>=21.2.0
-tensorflow==2.4.1
-keras==2.4.3
+tensorflow==2.6.0
+keras==2.6.0
 streamlit-webrtc>=0.34.0
