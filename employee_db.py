@@ -24,31 +24,30 @@ class EmployeeDatabase:
     def _setup_database(self):
         """Setup database indexes"""
         try:
-            # Drop existing collection if it exists to ensure clean schema
-            if self.collection.name in self.db.list_collection_names():
-                self.db.drop_collection(self.collection.name)
-            
-            # Create new collection with proper schema validation
-            self.db.create_collection(
-                self.collection.name,
-                validator={
-                    "$jsonSchema": {
-                        "bsonType": "object",
-                        "required": ["rank", "fullname", "militaryID", "department", "image_data"],
-                        "properties": {
-                            "rank": {"bsonType": "string"},
-                            "fullname": {"bsonType": "string"},
-                            "militaryID": {"bsonType": "int"},
-                            "department": {"bsonType": "string"},
-                            "image_data": {"bsonType": "binData"}
+            # Only create collection if it doesn't exist
+            if self.collection.name not in self.db.list_collection_names():
+                self.db.create_collection(
+                    self.collection.name,
+                    validator={
+                        "$jsonSchema": {
+                            "bsonType": "object",
+                            "required": ["rank", "fullname", "militaryID", "department", "image_data"],
+                            "properties": {
+                                "rank": {"bsonType": "string"},
+                                "fullname": {"bsonType": "string"},
+                                "militaryID": {"bsonType": "int"},
+                                "department": {"bsonType": "string"},
+                                "image_data": {"bsonType": "binData"}
+                            }
                         }
                     }
-                }
-            )
+                )
             
-            # Create unique index on militaryID
-            index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
-            self.collection.create_indexes([index1])
+            # Create unique index on militaryID if it doesn't exist
+            existing_indexes = [idx['name'] for idx in self.collection.list_indexes()]
+            if 'militaryID_1' not in existing_indexes:
+                index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
+                self.collection.create_indexes([index1])
         except OperationFailure as e:
             print(f"Warning: Database setup limited due to permissions - {str(e)}")
             # Try to create just the index which may work with fewer permissions
