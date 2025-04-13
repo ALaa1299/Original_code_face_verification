@@ -6,7 +6,14 @@ from pymongo.errors import DuplicateKeyError, OperationFailure
 class EmployeeDatabase:
     def __init__(self, db_name='employee_management', collection_name='employees'):
         """Initialize MongoDB connection and setup database"""
-        self.client = MongoClient("mongodb+srv://root:example@faceverification.qp2ckht.mongodb.net/?appName=faceverification")
+        try:
+            self.client = MongoClient("mongodb+srv://root:example@faceverification.qp2ckht.mongodb.net/?appName=faceverification")
+            # Test connection
+            self.client.server_info()
+            print("✅ Successfully connected to MongoDB")
+        except Exception as e:
+            print(f"❌ Failed to connect to MongoDB: {str(e)}")
+            raise
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.attendance_collection = self.db['attendance']

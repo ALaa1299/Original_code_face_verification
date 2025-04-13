@@ -33,20 +33,34 @@ def show():
             else:
                 try:
                     militaryID = int(militaryID)
-                    # Store image binary data directly in MongoDB
-                    result = db.add_employee(
-                        rank, 
-                        fullname, 
-                        militaryID, 
-                        department, 
-                        image_data.getvalue()  # Store binary data
-                    )
-                    if "Successfully" in result:
-                        st.success(result)
-                    elif "already exists" in result:
-                        st.warning(result)
-                    else:
-                        st.error(result)
+                    try:
+                        from PIL import Image
+                        import io
+                        
+                        # Open image and convert to binary
+                        img = Image.open(image_data)
+                        img_byte_arr = io.BytesIO()
+                        img.save(img_byte_arr, format='JPEG')
+                        img_binary = img_byte_arr.getvalue()
+                        
+                        result = db.add_employee(
+                            rank,
+                            fullname,
+                            militaryID,
+                            department,
+                            img_binary  # Store properly formatted binary data
+                        )
+                        
+                        if "Successfully" in result:
+                            st.success(result)
+                            st.rerun()  # Refresh the view to show new employee
+                        elif "already exists" in result:
+                            st.warning(result)
+                        else:
+                            st.error(result)
+                            
+                    except Exception as img_error:
+                        st.error(f"Error processing image: {str(img_error)}")
                 except ValueError:
                     st.error("Military ID must be a number")
                 except Exception as e:
