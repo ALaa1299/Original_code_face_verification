@@ -55,4 +55,8 @@ def add_employee_view():
                 except Exception as e:
                     st.error(f"Error adding employee: {str(e)}")
 
-add_employee_view()
+def show():
+    add_employee_view()
+
+if __name__ == "__main__":
+    show()
