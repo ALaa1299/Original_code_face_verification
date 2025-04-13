@@ -24,6 +24,23 @@ class EmployeeDatabase:
             # Create unique index on militaryID
             index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
             self.collection.create_indexes([index1])
+            
+            # Set schema validation to require image_data
+            self.db.command("collMod", self.collection.name,
+                validator={
+                    "$jsonSchema": {
+                        "bsonType": "object",
+                        "required": ["rank", "fullname", "militaryID", "department", "image_data"],
+                        "properties": {
+                            "rank": {"bsonType": "string"},
+                            "fullname": {"bsonType": "string"},
+                            "militaryID": {"bsonType": "int"},
+                            "department": {"bsonType": "string"},
+                            "image_data": {"bsonType": "binData"}
+                        }
+                    }
+                }
+            )
         except OperationFailure as e:
             print(f"Warning: Database setup limited due to permissions - {str(e)}")
             # Try to create just the index which may work with fewer permissions
