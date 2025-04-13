@@ -14,6 +14,6 @@ def show():
             try:
                 militaryID = int(militaryID)
                 result = db.record_attendance(militaryID, status)
-                st.success(status)
+                st.success("Attendance recorded successfully")
             except ValueError:
                 st.error("Military ID must be a number")
