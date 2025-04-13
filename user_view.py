@@ -23,7 +23,7 @@ def show():
                 try:
                     if db.create_user(username, password, role):
                         st.success(f"User {username} created successfully")
-                        st.experimental_rerun()  # Refresh the user list
+                        st.rerun()  # Refresh the user list
                     else:
                         st.error("Username already exists or invalid input")
                 except Exception as e:
@@ -46,7 +46,7 @@ def show():
                     try:
                         if db.delete_user(user['username']):
                             st.success(f"Deleted user {user['username']}")
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error("Failed to delete user")
                     except Exception as e:

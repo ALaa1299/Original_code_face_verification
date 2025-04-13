@@ -28,11 +28,11 @@ def show_face_verification():
         if st.button("Start Verification", disabled=st.session_state.verification_in_progress):
             st.session_state.verification_in_progress = True
             st.session_state.verified_ids = set()
-            st.experimental_rerun()
+            st.rerun()
     with col2:
         if st.button("Stop Verification", disabled=not st.session_state.verification_in_progress):
             st.session_state.verification_in_progress = False
-            st.experimental_rerun()
+            st.rerun()
     
     # Continuous verification process
     if st.session_state.verification_in_progress:
@@ -88,7 +88,7 @@ def show_face_verification():
                         
                         if st.button("OK", key=f"ok_{emp['militaryID']}"):
                             st.session_state.verified_ids.remove(emp['militaryID'])
-                            st.experimental_rerun()
+                            st.rerun()
             
             # Display the frame
             FRAME_WINDOW.image(frame, channels="BGR")

@@ -6,7 +6,7 @@ from pymongo.errors import DuplicateKeyError, OperationFailure
 class EmployeeDatabase:
     def __init__(self, db_name='employee_management', collection_name='employees'):
         """Initialize MongoDB connection and setup database"""
-        self.client = MongoClient('mongodb://localhost:27017/')
+        self.client = MongoClient("mongodb+srv://root:example@faceverification.qp2ckht.mongodb.net/?appName=faceverification")
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.attendance_collection = self.db['attendance']
@@ -15,52 +15,23 @@ class EmployeeDatabase:
         self._setup_database()
 
     def _setup_database(self):
-        """Create schema validation and indexes"""
-        validator = {
-            '$jsonSchema': {
-                'bsonType': 'object',
-                'required': ['rank', 'fullname', 'militaryID', 'department', 'image_path'],
-                'properties': {
-                    'rank': {
-                        'bsonType': 'string',
-                        'description': 'must be a string and is required'
-                    },
-                    'fullname': {
-                        'bsonType': 'string',
-                        'description': 'must be a string and is required'
-                    },
-                    'militaryID': {
-                        'bsonType': 'int',
-                        'description': 'must be an integer and is required'
-                    },
-                    'department': {
-                        'bsonType': 'string',
-                        'description': 'must be a string and is required'
-                    },
-                    'image_path': {
-                        'bsonType': 'string',
-                        'description': 'must be a string and is required'
-                    }
-                }
-            }
-        }
-
-        # Only create collection if it doesn't exist
-        if self.collection.name not in self.db.list_collection_names():
-            self.db.create_collection(
-                self.collection.name,
-                validator=validator
-            )
-        # Update validation on existing collection
-        else:
-            self.db.command({
-                'collMod': self.collection.name,
-                'validator': validator
-            })
-
-        # Create indexes
-        index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
-        self.collection.create_indexes([index1])
+        """Setup database indexes"""
+        try:
+            # Create collection if it doesn't exist
+            if self.collection.name not in self.db.list_collection_names():
+                self.db.create_collection(self.collection.name)
+            
+            # Create unique index on militaryID
+            index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
+            self.collection.create_indexes([index1])
+        except OperationFailure as e:
+            print(f"Warning: Database setup limited due to permissions - {str(e)}")
+            # Try to create just the index which may work with fewer permissions
+            try:
+                index1 = IndexModel([('militaryID', pymongo.ASCENDING)], unique=True)
+                self.collection.create_indexes([index1])
+            except Exception as e:
+                print(f"Failed to create indexes: {str(e)}")
 
     def record_attendance(self, militaryID, status):
         """Record employee attendance with timestamp"""

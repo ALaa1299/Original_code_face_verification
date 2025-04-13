@@ -64,7 +64,7 @@ st.sidebar.title("Navigation")
 # Signout button
 if st.sidebar.button("Sign Out"):
     st.session_state.authenticated = False
-    st.experimental_rerun()
+    st.rerun()
 # Navigation options
 nav_options = [
     "Add Employee",

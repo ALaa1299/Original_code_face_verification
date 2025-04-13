@@ -62,4 +62,4 @@ def show():
                 if st.button("Delete Attendance", key=f"del_att_{emp['militaryID']}"):
                     count = db.delete_employee_attendance(emp['militaryID'])
                     st.success(f"Deleted {count} attendance records")
-                    st.experimental_rerun()
+                    st.rerun()

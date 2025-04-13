@@ -1,13 +1,10 @@
 from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
 import hashlib
 
-load_dotenv()
 
 class UsersDatabase:
     def __init__(self):
-        self.client = MongoClient(os.getenv('MONGO_URI', 'mongodb://localhost:27017/'))
+        self.client = MongoClient("mongodb+srv://root:example@faceverification.qp2ckht.mongodb.net/?appName=faceverification")
         self.db = self.client['employee_portal']
         self.users = self.db['users']
 
