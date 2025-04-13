@@ -54,4 +54,6 @@ def add_employee_view():
                 except Exception as e:
                     st.error(f"Error adding employee: {str(e)}")
 
-add_employee_view()
+def show():
+    """Function to display the add employee view."""
+    add_employee_view()
