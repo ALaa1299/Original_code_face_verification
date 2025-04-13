@@ -156,6 +156,20 @@ class EmployeeDatabase:
 
     def update_employee(self, militaryID, update_data):
         try:
+            # Handle image update if present
+            if 'image_data' in update_data:
+                img = Image.open(BytesIO(update_data['image_data']))
+                embedding = DeepFace.represent(
+                    img_path=np.array(img),
+                    model_name='Facenet',
+                    detector_backend="mtcnn",
+                    enforce_detection=True
+                )[0]['embedding']
+                
+                # Replace image_data with properly named fields
+                update_data['image_binary'] = update_data.pop('image_data')
+                update_data['face_embedding'] = embedding
+            
             result = self.collection.update_one(
                 {"militaryID": militaryID},
                 {"$set": update_data}
