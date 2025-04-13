@@ -160,3 +160,23 @@ class EmployeeDatabase:
         except Exception as e:
             logger.error(f"Error fetching employees: {str(e)}")
             return []
+
+    def get_attendance_by_employee(self, militaryID):
+        """Get all attendance records for a specific employee"""
+        try:
+            return list(self.attendance_collection.find(
+                {"militaryID": militaryID},
+                {"_id": 0}
+            ).sort("timestamp", pymongo.DESCENDING))
+        except Exception as e:
+            logger.error(f"Error fetching attendance records: {str(e)}")
+            return []
+
+    def delete_employee_attendance(self, militaryID):
+        """Delete all attendance records for a specific employee"""
+        try:
+            result = self.attendance_collection.delete_many({"militaryID": militaryID})
+            return result.deleted_count
+        except Exception as e:
+            logger.error(f"Error deleting attendance records: {str(e)}")
+            return 0
