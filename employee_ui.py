@@ -38,15 +38,23 @@ def show_delete_attendance_records():
             st.warning("No employees found!")
             return
             
-        employee_names = []
-        for emp in employees:
-            # Safely handle missing fields
-            rank = emp.get('rank', 'N/A')
-            fullname = emp.get('fullname', 'Unknown')
-            militaryID = emp.get('militaryID', '0000')
-            employee_names.append(f"{rank} {fullname} (ID: {militaryID})")
-        selected_employee = st.selectbox("Select Employee", employee_names)
-        militaryID = employees[employee_names.index(selected_employee)]['militaryID']
+        military_id_input = st.text_input("Enter Military ID to search:")
+        
+        if military_id_input:
+            filtered_employees = [emp for emp in employees if str(emp.get('militaryID', '')).startswith(military_id_input)]
+            if not filtered_employees:
+                st.warning("No employees found with that Military ID!")
+                return
+            
+            employee_names = []
+            for emp in filtered_employees:
+                # Safely handle missing fields
+                rank = emp.get('rank', 'N/A')
+                fullname = emp.get('fullname', 'Unknown')
+                militaryID = emp.get('militaryID', '0000')
+                employee_names.append(f"{rank} {fullname} (ID: {militaryID})")
+            selected_employee = employee_names[0]  # Select the first match
+            militaryID = filtered_employees[0]['militaryID']
         
         if st.button("Delete All Attendance Records"):
             count = db.delete_employee_attendance(militaryID)
