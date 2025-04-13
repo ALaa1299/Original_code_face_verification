@@ -166,20 +166,26 @@ class EmployeeDatabase:
                     enforce_detection=True
                 )[0]['embedding']
                 
-                # Remove old image and embedding fields first
-                self.collection.update_one(
-                    {"militaryID": militaryID},
-                    {"$unset": {"image_binary": "", "face_embedding": ""}}
-                )
+                # Create complete update document with all fields
+                update_doc = {
+                    "$set": {
+                        **update_data,
+                        "image_binary": update_data.pop('image_data'),
+                        "face_embedding": embedding
+                    }
+                }
                 
-                # Set new image and embedding values
-                update_data['image_binary'] = update_data.pop('image_data')
-                update_data['face_embedding'] = embedding
-            
-            result = self.collection.update_one(
-                {"militaryID": militaryID},
-                {"$set": update_data}
-            )
+                # Perform atomic update of all fields
+                result = self.collection.update_one(
+                    {"militaryID": militaryID},
+                    update_doc
+                )
+            else:
+                # Regular update without image change
+                result = self.collection.update_one(
+                    {"militaryID": militaryID},
+                    {"$set": update_data}
+                )
             if result.modified_count > 0:
                 return f"Successfully updated employee with ID: {militaryID}"
             else:
