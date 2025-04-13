@@ -61,7 +61,14 @@ def main():
             key="face-verification",
             video_transformer_factory=FaceRecognitionTransformer,
             mode=WebRtcMode.SENDRECV,
-            async_transform=True
+            async_transform=True,
+            rtc_configuration={
+                "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+            },
+            media_stream_constraints={
+                "video": True,
+                "audio": False
+            }
         )
         
         if ctx.video_transformer:
