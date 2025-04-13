@@ -47,8 +47,16 @@ class FaceRecognitionTransformer(VideoTransformerBase):
                         status = "Late" if current_time.hour >= 9 else "Present"
                         self.db.record_attendance(emp_id, status)
                         
+                        # Store verified employee in session state
+                        st.session_state.last_verified = {
+                            'employee': emp,
+                            'timestamp': current_time,
+                            'status': status
+                        }
+                        
                         cv2.putText(frame, f"Verified: {emp['fullname']}", (20, 30),
                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        st.rerun()
         except Exception as e:
             st.error(f"Face recognition error: {str(e)}")
         return frame
@@ -66,8 +74,12 @@ def main():
                 "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
             },
             media_stream_constraints={
-                "video": True,
-                "audio": False  # Ensure audio is disabled
+                "video": {
+                    "width": {"ideal": 1280},
+                    "height": {"ideal": 720},
+                    "facingMode": "user"
+                },
+                "audio": False
             }
         )
         
