@@ -2,6 +2,10 @@ import pymongo
 from datetime import datetime
 from pymongo import MongoClient, IndexModel
 from pymongo.errors import DuplicateKeyError, OperationFailure
+from deepface import DeepFace
+import numpy as np
+from io import BytesIO
+from PIL import Image
 
 class EmployeeDatabase:
     def __init__(self, db_name='employee_management', collection_name='employees'):
@@ -37,7 +41,8 @@ class EmployeeDatabase:
                                 "fullname": {"bsonType": "string"},
                                 "militaryID": {"bsonType": "int"},
                                 "department": {"bsonType": "string"},
-                                "image_data": {"bsonType": "binData"}
+                                "image_data": {"bsonType": "binData"},
+                                "face_embedding": {"bsonType": "array"}
                             }
                         }
                     }
@@ -56,6 +61,40 @@ class EmployeeDatabase:
                 self.collection.create_indexes([index1])
             except Exception as e:
                 print(f"Failed to create indexes: {str(e)}")
+
+    def add_employee(self, rank, fullname, militaryID, department, image_data):
+        """Add a new employee record with face embedding"""
+        # Convert binary image data to numpy array
+        img = Image.open(BytesIO(image_data))
+        img_array = np.array(img)
+        
+        # Generate face embedding
+        try:
+            embedding = DeepFace.represent(
+                img_path=img_array,
+                model_name='Facenet',
+                detector_backend="mtcnn",
+                enforce_detection=False
+            )[0]['embedding']
+        except Exception as e:
+            return f"Error generating face embedding: {str(e)}"
+
+        employee_data = {
+            'rank': rank,
+            'fullname': fullname,
+            'militaryID': militaryID,
+            'department': department,
+            'image_data': image_data,
+            'face_embedding': embedding
+        }
+        
+        try:
+            self.collection.insert_one(employee_data)
+            return f"Successfully added employee {fullname} (ID: {militaryID})"
+        except DuplicateKeyError:
+            return f"Employee with ID {militaryID} already exists"
+        except Exception as e:
+            return f"Error adding employee: {str(e)}"
 
     def record_attendance(self, militaryID, status):
         """Record employee attendance with timestamp"""
@@ -127,41 +166,3 @@ class EmployeeDatabase:
         attendance_result = self.attendance_collection.delete_many({"militaryID": militaryID})
         
         return f"Successfully deleted employee {militaryID} and {attendance_result.deleted_count} attendance records"
-
-    def add_employee(self, rank, fullname, militaryID, department, image_data):
-        """Add a new employee record to the database with binary image data"""
-        employee_data = {
-            'rank': rank,
-            'fullname': fullname,
-            'militaryID': militaryID,
-            'department': department,
-            'image_data': image_data  # Store binary data directly
-        }
-        
-        try:
-            self.collection.insert_one(employee_data)
-            return f"Successfully added employee {fullname} (ID: {militaryID})"
-        except DuplicateKeyError:
-            return f"Employee with ID {militaryID} already exists"
-        except Exception as e:
-            return f"Error adding employee: {str(e)}"
-
-    def update_employee(self, militaryID, update_data):
-        """Update an existing employee record"""
-        try:
-            # Check if employee exists
-            employee = self.collection.find_one({"militaryID": militaryID})
-            if not employee:
-                return f"No employee found with ID {militaryID}"
-            
-            # Perform the update
-            result = self.collection.update_one(
-                {"militaryID": militaryID},
-                {"$set": update_data}
-            )
-            
-            if result.modified_count > 0:
-                return f"Successfully updated employee {militaryID}"
-            return f"No changes made to employee {militaryID}"
-        except Exception as e:
-            return f"Error updating employee: {str(e)}"

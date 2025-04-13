@@ -1,7 +1,5 @@
 import cv2
 from deepface import DeepFace
-import tempfile
-import os
 
 class FaceRecognitionHandler:
     def __init__(self, db):
@@ -10,56 +8,33 @@ class FaceRecognitionHandler:
         self.known_ids = []
 
     def load_employee_faces(self):
-        """Load all employee face embeddings for verification."""
+        """Load all employee face embeddings from database"""
         employees = self.db.get_all_employees()
         
         for emp in employees:
-            if emp.get('image_path'):
-                try:
-                    if os.path.exists(emp['image_path']):
-                        embedding = DeepFace.represent(
-                            img_path=emp['image_path'],
-                            model_name='Facenet',
-                            detector_backend="mtcnn",
-                            enforce_detection=False
-                        )
-                        if embedding:
-                            self.known_embeddings.append(embedding[0]['embedding'])
-                            self.known_ids.append(emp['militaryID'])
-                except Exception as e:
-                    print(f"Failed to process image for ID {emp['militaryID']}: {str(e)}")
+            if 'face_embedding' in emp:
+                self.known_embeddings.append(emp['face_embedding'])
+                self.known_ids.append(emp['militaryID'])
 
     def verify_face(self, frame):
-        """Verify faces in the provided frame against known embeddings."""
+        """Verify faces in frame against stored embeddings"""
         results = {}
         
-        # Save frame to temp file
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
-            cv2.imwrite(tmp.name, frame)
-            frame_path = tmp.name
-            
         try:
-            # Compare frame against each employee image
-            for emp_id, emp in zip(self.known_ids, self.db.get_all_employees()):
-                if not emp.get('image_path'):
-                    continue
-                    
-                try:
-                    result = DeepFace.verify(
-                        img1_path=frame_path,
-                        img2_path=emp['image_path'],
-                        model_name='Facenet',
-                        detector_backend="mtcnn",
-                        distance_metric='cosine',
-                        enforce_detection=False
-                    )
-                    
-                    if result['verified'] and result['distance'] < 0.4:
-                        results[emp_id] = True
-                except Exception as e:
-                    print(f"Error verifying face for {emp_id}: {str(e)}")
-                    
-        finally:
-            os.unlink(frame_path)
+            # Get embedding from current frame
+            frame_embedding = DeepFace.represent(
+                img_path=frame,
+                model_name='Facenet',
+                detector_backend="mtcnn",
+                enforce_detection=False
+            )[0]['embedding']
+            
+            # Compare against stored embeddings
+            for emp_id, known_embedding in zip(self.known_ids, self.known_embeddings):
+                distance = DeepFace.dst.findCosineDistance(frame_embedding, known_embedding)
+                if distance < 0.4:  # Threshold for verification
+                    results[emp_id] = True
+        except Exception as e:
+            print(f"Error verifying face: {str(e)}")
             
         return results
