@@ -41,7 +41,7 @@ def show_delete_attendance_records():
         military_id_input = st.text_input("Enter Military ID to search:")
         
         if military_id_input:
-            filtered_employees = [emp for emp in employees if str(emp.get('militaryID', '')).startswith(military_id_input)]
+            filtered_employees = [emp for emp in employees if str(emp.get('militaryID', '')) == military_id_input]
             if not filtered_employees:
                 st.warning("No employees found with that Military ID!")
                 return
