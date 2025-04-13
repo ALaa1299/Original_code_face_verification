@@ -158,9 +158,9 @@ class EmployeeDatabase:
         try:
             # Handle image update if present
             if 'image_data' in update_data:
-                img = Image.open(BytesIO(update_data['image_data']))
+                img = Image.open(BytesIO(update_data['image_data'])).convert('RGB')
                 embedding = DeepFace.represent(
-                    img_path=np.array(img),
+                    img_path=np.array(img)[:, :, :3],  # Ensure only 3 channels
                     model_name='Facenet',
                     detector_backend="mtcnn",
                     enforce_detection=True
