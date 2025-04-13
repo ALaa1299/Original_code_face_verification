@@ -166,7 +166,13 @@ class EmployeeDatabase:
                     enforce_detection=True
                 )[0]['embedding']
                 
-                # Replace image_data with properly named fields
+                # Remove old image and embedding fields first
+                self.collection.update_one(
+                    {"militaryID": militaryID},
+                    {"$unset": {"image_binary": "", "face_embedding": ""}}
+                )
+                
+                # Set new image and embedding values
                 update_data['image_binary'] = update_data.pop('image_data')
                 update_data['face_embedding'] = embedding
             
