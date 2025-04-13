@@ -1,6 +1,8 @@
 import streamlit as st
 import cv2
 import os
+from io import BytesIO
+from PIL import Image
 from employee_db import EmployeeDatabase
 
 def show():
@@ -34,9 +36,10 @@ def show():
             cols = st.columns([1, 3, 1])  # Image, Info, Delete button
             
             with cols[0]:  # Image column
-                if emp.get('image_data'):
+                if emp.get('image_binary'):
                     try:
-                        st.image(emp['image_data'], width=100)
+                        img = Image.open(BytesIO(emp['image_binary']))
+                        st.image(img, width=100)
                     except Exception as e:
                         st.error(f"Error loading image: {str(e)}")
                 else:
