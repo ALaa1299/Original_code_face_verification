@@ -5,10 +5,19 @@ import queue
 import av
 from typing import Union
 from threading import Lock
+import asyncio
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Fix asyncio event loop policy for compatibility on Windows and Streamlit Cloud
+if sys.platform.startswith("win"):
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception as e:
+        logger.warning(f"Failed to set WindowsSelectorEventLoopPolicy: {e}")
 
 # WebRTC Configuration
 RTC_CONFIGURATION = RTCConfiguration({
@@ -46,6 +55,13 @@ class CameraHandler:
         st.info("Please grant permission for camera access in your browser.")
         
         try:
+            # Ensure event loop is running or create one
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
             self.webrtc_ctx = webrtc_streamer(
                 key=key,
                 mode=WebRtcMode.SENDRECV,
