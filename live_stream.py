@@ -54,9 +54,12 @@ class CameraHandler:
     def initialize_camera(self, key=None):
         st.info("Please grant permission for camera access in your browser.")
         
+        import uuid
         if key is None:
-            import uuid
             key = f"camera-feed-{uuid.uuid4()}"
+        else:
+            # Append a UUID suffix to ensure uniqueness
+            key = f"{key}-{uuid.uuid4()}"
         
         try:
             # Ensure event loop is running or create one
