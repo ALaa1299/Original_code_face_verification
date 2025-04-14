@@ -46,14 +46,19 @@ class CameraHandler:
         self.video_processor = VideoProcessor()
         self.lock = Lock()
 
-    def initialize_camera(self):
+    def initialize_camera(self, key=None):  # Added key as an optional parameter
         st.info("Please grant permission for camera access in your browser.")
 
-        # Generate a globally unique key for the WebRTC streamer
-        if "camera_key" not in st.session_state:
-            st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
-
-        key = st.session_state.camera_key
+        # Generate a globally unique key if none is provided
+        if key is None:
+            if "camera_key" not in st.session_state:
+                st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
+            key = st.session_state.camera_key
+        else:
+            # Ensure the key is unique and consistent
+            if f"{key}_unique" not in st.session_state:
+                st.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
+            key = st.session_state[f"{key}_unique"]
 
         try:
             # Ensure a new event loop is created if none exists
@@ -65,7 +70,7 @@ class CameraHandler:
 
             # Initialize WebRTC streamer
             self.webrtc_ctx = webrtc_streamer(
-                key=key,  # Ensure the key is unique
+                key=key,  # Use the provided or generated unique key
                 mode=WebRtcMode.SENDRECV,
                 rtc_configuration=RTC_CONFIGURATION,
                 media_stream_constraints={
@@ -118,3 +123,15 @@ class CameraHandler:
                 finally:
                     self.webrtc_ctx = None
 
+
+# Instantiate the CameraHandler
+camera_handler = CameraHandler()
+
+st.title("WebRTC Streamlit App")
+st.write("Click below to initialize or release the camera.")
+
+if st.button("Start Camera"):
+    camera_handler.initialize_camera(key="face-verification")  # Example unique key
+
+if st.button("Release Camera"):
+    camera_handler.release()
