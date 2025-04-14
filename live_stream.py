@@ -124,14 +124,3 @@ class CameraHandler:
                     self.webrtc_ctx = None
 
 
-# Instantiate the CameraHandler
-camera_handler = CameraHandler()
-
-st.title("WebRTC Streamlit App")
-st.write("Click below to initialize or release the camera.")
-
-if st.button("Start Camera"):
-    camera_handler.initialize_camera(key="face-verification")  # Example unique key
-
-if st.button("Release Camera"):
-    camera_handler.release()
