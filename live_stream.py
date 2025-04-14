@@ -51,8 +51,12 @@ class CameraHandler:
         self.video_processor = VideoProcessor()
         self.lock = Lock()
 
-    def initialize_camera(self, key="camera-feed"):
+    def initialize_camera(self, key=None):
         st.info("Please grant permission for camera access in your browser.")
+        
+        if key is None:
+            import uuid
+            key = f"camera-feed-{uuid.uuid4()}"
         
         try:
             # Ensure event loop is running or create one
