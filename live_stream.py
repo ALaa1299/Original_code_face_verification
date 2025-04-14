@@ -46,19 +46,14 @@ class CameraHandler:
         self.video_processor = VideoProcessor()
         self.lock = Lock()
 
-    def initialize_camera(self, key=None):
+    def initialize_camera(self):
         st.info("Please grant permission for camera access in your browser.")
 
-        # Generate a unique key if none is provided
-        if key is None:
-            if "camera_key" not in st.session_state:
-                st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
-            key = st.session_state.camera_key
-        else:
-            # Append a unique suffix to the key
-            if f"{key}_unique" not in st.session_state:
-                st.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
-            key = st.session_state[f"{key}_unique"]
+        # Generate a globally unique key for the WebRTC streamer
+        if "camera_key" not in st.session_state:
+            st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
+
+        key = st.session_state.camera_key
 
         try:
             # Ensure a new event loop is created if none exists
@@ -122,5 +117,4 @@ class CameraHandler:
                     logger.error(f"Error releasing camera: {str(e)}")
                 finally:
                     self.webrtc_ctx = None
-
 
