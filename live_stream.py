@@ -7,12 +7,13 @@ from typing import Union
 from threading import Lock
 import asyncio
 import sys
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Fix asyncio event loop policy for compatibility on Windows and Streamlit Cloud
+# Fix asyncio event loop policy for compatibility on Windows
 if sys.platform.startswith("win"):
     try:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -22,15 +23,9 @@ if sys.platform.startswith("win"):
 # WebRTC Configuration
 RTC_CONFIGURATION = RTCConfiguration({
     "iceServers": [
-        {
-            "urls": ["stun:stun.l.google.com:19302"],
-        },
-        {
-            "urls": ["stun:stun1.l.google.com:19302"],
-        },
-        {
-            "urls": ["stun:stun2.l.google.com:19302"],
-        }
+        {"urls": ["stun:stun.l.google.com:19302"]},
+        {"urls": ["stun:stun1.l.google.com:19302"]},
+        {"urls": ["stun:stun2.l.google.com:19302"]}
     ]
 })
 
@@ -53,30 +48,29 @@ class CameraHandler:
 
     def initialize_camera(self, key=None):
         st.info("Please grant permission for camera access in your browser.")
-        
-        import uuid
-        import streamlit as st_internal
-        
-        if key is None:
-            if "camera_key" not in st_internal.session_state:
-                st_internal.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
-            key = st_internal.session_state.camera_key
-        else:
-            # Use the provided key as base and append a stable suffix
-            if f"{key}_unique" not in st_internal.session_state:
-                st_internal.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
-            key = st_internal.session_state[f"{key}_unique"]
-        
-        try:
-            # Ensure event loop is running or create one
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
 
+        # Generate a unique key if none is provided
+        if key is None:
+            if "camera_key" not in st.session_state:
+                st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
+            key = st.session_state.camera_key
+        else:
+            # Append a unique suffix to the key
+            if f"{key}_unique" not in st.session_state:
+                st.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
+            key = st.session_state[f"{key}_unique"]
+
+        try:
+            # Ensure a new event loop is created if none exists
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                logger.info("No running event loop found. Creating a new one.")
+                asyncio.set_event_loop(asyncio.new_event_loop())
+
+            # Initialize WebRTC streamer
             self.webrtc_ctx = webrtc_streamer(
-                key=key,
+                key=key,  # Ensure the key is unique
                 mode=WebRtcMode.SENDRECV,
                 rtc_configuration=RTC_CONFIGURATION,
                 media_stream_constraints={
@@ -96,7 +90,7 @@ class CameraHandler:
                 st.success("Camera initialized successfully!")
             else:
                 st.warning("Waiting for camera access...")
-                
+
         except Exception as e:
             st.error(f"Failed to initialize camera: {str(e)}")
             logger.error(f"Camera initialization error: {str(e)}")
@@ -107,7 +101,7 @@ class CameraHandler:
     def get_frame(self) -> Union[None, av.VideoFrame]:
         if not self.webrtc_ctx or not self.webrtc_ctx.video_processor:
             return None
-            
+
         try:
             with self.lock:
                 if not self.video_processor.frame_queue.empty():
@@ -129,4 +123,4 @@ class CameraHandler:
                 finally:
                     self.webrtc_ctx = None
 
-#
+
