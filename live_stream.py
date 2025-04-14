@@ -55,11 +55,17 @@ class CameraHandler:
         st.info("Please grant permission for camera access in your browser.")
         
         import uuid
+        import streamlit as st_internal
+        
         if key is None:
-            key = f"camera-feed-{uuid.uuid4()}"
+            if "camera_key" not in st_internal.session_state:
+                st_internal.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
+            key = st_internal.session_state.camera_key
         else:
-            # Append a UUID suffix to ensure uniqueness
-            key = f"{key}-{uuid.uuid4()}"
+            # Use the provided key as base and append a stable suffix
+            if f"{key}_unique" not in st_internal.session_state:
+                st_internal.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
+            key = st_internal.session_state[f"{key}_unique"]
         
         try:
             # Ensure event loop is running or create one
