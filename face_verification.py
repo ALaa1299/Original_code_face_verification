@@ -39,8 +39,15 @@ class FaceVerificationProcessor:
 def show_face_verification():
     st.header("Face Verification")
     db = EmployeeDatabase.get_instance()
-    processor = FaceVerificationProcessor(db)
-    camera_handler = CameraHandler()
+
+    if 'processor' not in st.session_state:
+        st.session_state.processor = FaceVerificationProcessor(db)
+    processor = st.session_state.processor
+
+    if 'camera_handler' not in st.session_state:
+        st.session_state.camera_handler = CameraHandler()
+    camera_handler = st.session_state.camera_handler
+
     st.info("Initializing camera...")
 
     # Use a unique key for the webrtc streamer to avoid duplicate key error
