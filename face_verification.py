@@ -32,33 +32,48 @@ class FaceVerificationProcessor:
                     st.session_state.last_verified = emp
         return frame
 
+import uuid
+
 def show_face_verification():
     st.header("Face Verification")
     db = EmployeeDatabase.get_instance()
     camera_handler = CameraHandler()
     processor = FaceVerificationProcessor(db, camera_handler)
+    
+    # Set a unique_id in session_state if not present
+    if 'unique_id' not in st.session_state:
+        st.session_state['unique_id'] = str(uuid.uuid4())
+    
     st.info("Initializing camera...")
     
     # Use a unique key for the webrtc streamer to avoid duplicate key error
-    unique_key = f"face-verification-{st.session_state.get('unique_id', 'default')}"
-    webrtc_ctx = camera_handler.initialize_camera(key=unique_key)
+    unique_key = f"face-verification-{st.session_state['unique_id']}"
+    
+    # Initialize camera only once and store webrtc_ctx in session_state
+    if 'webrtc_ctx' not in st.session_state:
+        st.session_state['webrtc_ctx'] = camera_handler.initialize_camera(key=unique_key)
+    
+    webrtc_ctx = st.session_state['webrtc_ctx']
+    
     logger.info("webtrc_ctx.video reciver:")
     logger.info(webrtc_ctx.video_receiver)
     logger.info("webtrc_ctx:")
     logger.info(webrtc_ctx)
+    
     if webrtc_ctx and webrtc_ctx.video_receiver:
         logger.info("if 1")
         frame = camera_handler.get_frame()
         logger.info("Frame received successfully." if frame is not None else "No frame received.")
 
         if frame is not None:
-            
             try:
                 frame_array = frame.to_ndarray(format="bgr24")
                 processed_frame = processor.process_frame(frame_array)
                 st.image(processed_frame, channels="BGR")
             except Exception as e:
                 st.error(f"Error processing frame: {str(e)}")
+    else:
+        st.warning("Waiting for camera access permission or camera not initialized.")
     
     if 'last_verified' in st.session_state:
         emp = st.session_state.last_verified
