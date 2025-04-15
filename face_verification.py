@@ -35,7 +35,9 @@ def show_face_verification():
     processor = FaceVerificationProcessor(db, camera_handler)
     st.info("Initializing camera...")
     
-    webrtc_ctx = camera_handler.initialize_camera(key="face-verification")
+    # Use a unique key for the webrtc streamer to avoid duplicate key error
+    unique_key = f"face-verification-{st.session_state.get('unique_id', 'default')}"
+    webrtc_ctx = camera_handler.initialize_camera(key=unique_key)
     if webrtc_ctx and webrtc_ctx.video_receiver:
         frame = camera_handler.get_frame()
         st.info(frame)
