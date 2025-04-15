@@ -42,7 +42,12 @@ def show_face_verification():
     # Use a unique key for the webrtc streamer to avoid duplicate key error
     unique_key = f"face-verification-{st.session_state.get('unique_id', 'default')}"
     webrtc_ctx = camera_handler.initialize_camera(key=unique_key)
+    logger.info("webtrc_ctx.video reciver:")
+    logger.info(webrtc_ctx.video_receiver)
+    logger.info("webtrc_ctx:")
+    logger.info(webrtc_ctx)
     if webrtc_ctx and webrtc_ctx.video_receiver:
+        logger.info("if 1")
         frame = camera_handler.get_frame()
         logger.info("Frame received successfully." if frame is not None else "No frame received.")
 
