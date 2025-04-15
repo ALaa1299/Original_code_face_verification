@@ -55,7 +55,12 @@ def show_face_verification():
 
     if 'last_verified' in st.session_state:
         emp = st.session_state.last_verified
-        st.write(f"**Verified Employee:** {emp['fullname']} (ID: {emp['militaryID']})")
-        st.image(emp['image_binary'], width=100, caption="Employee Photo")
+        col1, col2 = st.columns([3,1])
+        with col1:
+            st.write(f"**Verified Employee:** {emp['fullname']} (ID: {emp['militaryID']})")
+            st.image(emp['image_binary'], width=100, caption="Employee Photo")
+        with col2:
+            if st.button("OK"):
+                del st.session_state['last_verified']
 
 show_face_verification()
