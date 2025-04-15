@@ -9,23 +9,20 @@ import asyncio
 import sys
 import uuid
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Fix asyncio event loop policy for compatibility on Windows
 if sys.platform.startswith("win"):
     try:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     except Exception as e:
         logger.warning(f"Failed to set WindowsSelectorEventLoopPolicy: {e}")
 
-# WebRTC Configuration
 RTC_CONFIGURATION = RTCConfiguration({
     "iceServers": [
         {"urls": ["stun:stun.l.google.com:19302"]},
-        {"urls": ["stun:stun1.l.google.com:19302"]},
-        {"urls": ["stun:stun2.l.google.com:19302"]}
+        {"urls": ["stun1.l.google.com:19302"]},
+        {"urls": ["stun2.l.google.com:19302"]}
     ]
 })
 
@@ -35,9 +32,9 @@ class VideoProcessor:
 
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         try:
-            self.frame_queue.put(frame.to_ndarray(format="bgr24"))
+            self.frame_queue.put_nowait(frame.to_ndarray(format="bgr24"))
         except queue.Full:
-            logger.warning("Frame queue is full, dropping frame.")
+            logger.warning("Frame queue full, dropping frame.")
         return frame
 
 class CameraHandler:
@@ -46,40 +43,32 @@ class CameraHandler:
         self.video_processor = VideoProcessor()
         self.lock = Lock()
 
-    def initialize_camera(self, key=None):  # Added key as an optional parameter
+    def initialize_camera(self, key=None):
         st.info("Please grant permission for camera access in your browser.")
 
-        # Generate a globally unique key if none is provided
         if key is None:
             if "camera_key" not in st.session_state:
                 st.session_state.camera_key = f"camera-feed-{uuid.uuid4()}"
             key = st.session_state.camera_key
         else:
-            # Ensure the key is unique and consistent
             if f"{key}_unique" not in st.session_state:
                 st.session_state[f"{key}_unique"] = f"{key}-{uuid.uuid4()}"
             key = st.session_state[f"{key}_unique"]
 
         try:
-            # Ensure a new event loop is created if none exists
             try:
                 asyncio.get_running_loop()
             except RuntimeError:
                 logger.info("No running event loop found. Creating a new one.")
                 asyncio.set_event_loop(asyncio.new_event_loop())
 
-            # Initialize WebRTC streamer
             self.webrtc_ctx = webrtc_streamer(
-                key=key,  # Use the provided or generated unique key
+                key=key,
                 mode=WebRtcMode.SENDRECV,
                 rtc_configuration=RTC_CONFIGURATION,
                 media_stream_constraints={
-                    "video": {
-                        "width": {"ideal": 640},
-                        "height": {"ideal": 480},
-                        "frameRate": {"ideal": 30}
-                    },
-                    "audio": False
+                    "video": {"width": {"ideal": 640}, "height": {"ideal": 480}, "frameRate": {"ideal": 30}},
+                    "audio": False,
                 },
                 video_processor_factory=VideoProcessor,
                 async_processing=True,
@@ -92,8 +81,8 @@ class CameraHandler:
                 st.warning("Waiting for camera access...")
 
         except Exception as e:
-            st.error(f"Failed to initialize camera: {str(e)}")
-            logger.error(f"Camera initialization error: {str(e)}")
+            st.error(f"Failed to initialize camera: {e}")
+            logger.error(f"Camera initialization error: {e}")
             return None
 
         return self.webrtc_ctx
@@ -105,22 +94,19 @@ class CameraHandler:
         try:
             with self.lock:
                 if not self.video_processor.frame_queue.empty():
-                    return self.video_processor.frame_queue.get()
+                    return self.video_processor.frame_queue.get_nowait()
             return None
         except Exception as e:
-            logger.error(f"Error getting frame: {str(e)}")
+            logger.error(f"Error getting frame: {e}")
             return None
 
     def release(self):
-        """Clean up camera resources"""
         with self.lock:
             if self.webrtc_ctx:
                 try:
                     self.webrtc_ctx.video_receiver.stop()
                     logger.info("Camera resources released")
                 except Exception as e:
-                    logger.error(f"Error releasing camera: {str(e)}")
+                    logger.error(f"Error releasing camera: {e}")
                 finally:
                     self.webrtc_ctx = None
-
-
