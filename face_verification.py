@@ -18,6 +18,7 @@ class FaceVerificationProcessor:
         self.verified_ids = set()
 
     def process_frame(self, frame: av.VideoFrame) -> av.VideoFrame:
+        logger.info("Processing a new video frame for face verification.")
         # Convert VideoFrame to ndarray
         img = frame.to_ndarray(format="bgr24")
         results = self.face_handler.verify_face(img)
@@ -31,6 +32,7 @@ class FaceVerificationProcessor:
                     cv2.putText(img, f"Verified: {emp['fullname']}", (20, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                     st.session_state.last_verified = emp
+                    logger.info(f"Employee verified: {emp['fullname']} (ID: {emp['militaryID']})")
         # Return processed frame as VideoFrame
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
@@ -49,6 +51,7 @@ def show_face_verification():
         key=unique_key,
         frame_callback=processor.process_frame
     )
+    logger.info("Camera initialized and frame callback set.")
 
     if 'last_verified' in st.session_state:
         emp = st.session_state.last_verified

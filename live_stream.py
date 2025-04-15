@@ -1,6 +1,9 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CameraHandler:
     def __init__(self):
@@ -15,10 +18,15 @@ class CameraHandler:
         Accepts a frame_callback function to process frames asynchronously.
         """
         st.info("Please grant permission for camera access in your browser.")
+        logger.info("Initializing camera with key: %s", key)
 
         def callback(frame: av.VideoFrame):
+            logger.info("Received a new video frame for processing.")
             if frame_callback:
-                return frame_callback(frame)
+                processed_frame = frame_callback(frame)
+                logger.info("Processed frame returned from callback.")
+                return processed_frame
+            logger.info("No frame_callback provided, returning original frame.")
             return frame
 
         # Initialize the WebRTC streamer
@@ -38,8 +46,10 @@ class CameraHandler:
         )
 
         if self.webrtc_ctx.video_receiver:
+            logger.info("Camera initialized successfully, video_receiver is available.")
             st.success("Camera initialized successfully! Start using the app.")
         else:
+            logger.warning("Waiting for camera access permission, video_receiver not yet available.")
             st.warning("Waiting for camera access permission...")
 
         return self.webrtc_ctx
