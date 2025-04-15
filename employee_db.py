@@ -116,7 +116,7 @@ class EmployeeDatabase:
                 img_path=np.array(img),
                 model_name='Facenet',
                 detector_backend="mtcnn",
-                enforce_detection=True
+                enforce_detection=False
             )[0]['embedding']
             
             employee_data = {
@@ -163,7 +163,7 @@ class EmployeeDatabase:
                     img_path=np.array(img)[:, :, :3],  # Ensure only 3 channels
                     model_name='Facenet',
                     detector_backend="mtcnn",
-                    enforce_detection=True
+                    enforce_detection=False
                 )[0]['embedding']
                 
                 # Create complete update document with all fields
