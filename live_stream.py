@@ -57,10 +57,11 @@ class CameraHandler:
 
         try:
             try:
-                asyncio.get_running_loop()
+                loop = asyncio.get_running_loop()
             except RuntimeError:
-                logger.info("No running event loop found. Creating a new one.")
-                asyncio.set_event_loop(asyncio.new_event_loop())
+                logger.info("No running event loop found. Creating and setting a new one.")
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
 
             self.webrtc_ctx = webrtc_streamer(
                 key=key,
