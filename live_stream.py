@@ -18,8 +18,16 @@ class CameraHandler:
         self.webrtc_ctx = webrtc_streamer(
             key=key,
             mode=WebRtcMode.SENDRECV,  # Send and receive video
-            media_stream_constraints={"video": True, "audio": False},  # Video-only
+            media_stream_constraints={
+                "video": {
+                    "width": {"ideal": 320},  # Lower resolution width
+                    "height": {"ideal": 240},  # Lower resolution height
+                    "frameRate": {"ideal": 15}  # Lower frame rate
+                },
+                "audio": False
+            },  # Video-only with constraints
             async_processing=True,  # Enable async processing for smooth performance
+            video_frame_queue_size=8  # Increase frame queue size to reduce frame drops
         )
 
         if self.webrtc_ctx.video_receiver:
