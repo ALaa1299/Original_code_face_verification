@@ -26,8 +26,7 @@ class CameraHandler:
                 },
                 "audio": False
             },  # Video-only with constraints
-            async_processing=True,  # Enable async processing for smooth performance
-            video_frame_queue_size=8  # Increase frame queue size to reduce frame drops
+            async_processing=True  # Enable async processing for smooth performance
         )
 
         if self.webrtc_ctx.video_receiver:
