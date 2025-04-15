@@ -5,6 +5,10 @@ from employee_db import EmployeeDatabase
 import cv2
 from datetime import datetime
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FaceVerificationProcessor:
     def __init__(self, db, camera_handler):
@@ -40,8 +44,10 @@ def show_face_verification():
     webrtc_ctx = camera_handler.initialize_camera(key=unique_key)
     if webrtc_ctx and webrtc_ctx.video_receiver:
         frame = camera_handler.get_frame()
+        logger.info("Frame received successfully." if frame is not None else "No frame received.")
+
         if frame is not None:
-            st.info("Frame received successfully.")
+            
             try:
                 frame_array = frame.to_ndarray(format="bgr24")
                 processed_frame = processor.process_frame(frame_array)
