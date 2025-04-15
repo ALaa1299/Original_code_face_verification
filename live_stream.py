@@ -28,7 +28,7 @@ RTC_CONFIGURATION = RTCConfiguration({
 
 class VideoProcessor:
     def __init__(self):
-        self.frame_queue = queue.Queue(maxsize=1)
+        self.frame_queue = queue.Queue(maxsize=5)
 
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         try:
