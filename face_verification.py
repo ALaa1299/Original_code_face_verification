@@ -40,8 +40,8 @@ def show_face_verification():
     webrtc_ctx = camera_handler.initialize_camera(key=unique_key)
     if webrtc_ctx and webrtc_ctx.video_receiver:
         frame = camera_handler.get_frame()
-        st.info(frame)
         if frame is not None:
+            st.info("Frame received successfully.")
             try:
                 frame_array = frame.to_ndarray(format="bgr24")
                 processed_frame = processor.process_frame(frame_array)
