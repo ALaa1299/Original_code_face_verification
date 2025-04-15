@@ -33,6 +33,7 @@ class FaceVerificationProcessor:
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                     st.session_state.last_verified = emp
                     logger.info(f"Employee verified: {emp['fullname']} (ID: {emp['militaryID']})")
+                    st.rerun()
         # Return processed frame as VideoFrame
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
@@ -69,5 +70,6 @@ def show_face_verification():
         with col2:
             if st.button("OK"):
                 del st.session_state['last_verified']
+                st.experimental_rerun()
 
 show_face_verification()
